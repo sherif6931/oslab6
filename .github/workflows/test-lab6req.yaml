@@ -18,7 +18,7 @@ jobs:
     - name: Build ELF
       run: |
         mkdir -p bin
-        gcc main.c -o bin/out
+        gcc src/main.c -o bin/out
 
     - name: Check output (Linux)
       shell: bash
