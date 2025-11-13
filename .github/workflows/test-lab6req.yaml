@@ -19,6 +19,8 @@ jobs:
     - name: Check output
       shell: pwsh
       run: |
+        $ErrorActionPreference = 'Continue'
+        
         foreach ($input in @( "1", "0" )) {
           $in = "in$input.txt"
           $out = "out$input.txt"
