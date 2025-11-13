@@ -20,13 +20,12 @@ void sigchld_handler(int sig) {
             kill(child2_pid, SIGCONT);
         }
     } else {
-        // Child2 exited → terminate parent cleanly
         exit(0);
     }
 }
 
 int main() {
-    setbuf(stdout, NULL); // Disable buffering so output shows immediately
+    setbuf(stdout, NULL);
     signal(SIGCHLD, sigchld_handler);
 
     pid_t child1_pid = fork();

@@ -9,53 +9,41 @@ on:
     branches: [ main, dev ]
 
 jobs:
-  run-binary:
-    runs-on: windows-latest
-
+  run-linux:
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Check output
-      shell: pwsh
-      run : |
-      
-        $errors = @()
+    - name: Build ELF
+      run: |
+        mkdir -p bin
+        gcc main.c -o bin/out
 
-        foreach ($input in @( "1", "0" )) {
-          $in = "in$input.txt"
-          $out = "out$input.txt"
-          Set-Content $in $input
-          $p = Start-Process -FilePath ".\bin\out.exe" -RedirectStandardInput $in -RedirectStandardOutput $out -NoNewWindow -PassThru
+    - name: Check output (Linux)
+      shell: bash
+      run: |
+        errors=""
 
-          if (-not $p.WaitForExit(15000)) { 
-            $errors += "❎ Program timeout"
-          }
+        for input in 1 0; do
+          echo "$input" > "in${input}.txt"
+          timeout 15s ./bin/out < "in${input}.txt" > "out${input}.txt" || errors+="❎ Program Timeout"$'\n'
 
-          $output = Get-Content $out -Raw
+          output=$(cat "out${input}.txt")
 
-          if ($output -notmatch "Child1 PID:.*Parent PID:") { 
-            $errors += "❎ Child1 PID/Parent Requirement Failed"
-          }
+          [[ "$output" =~ Child1\ PID:.*Parent\ PID: ]] || errors+="❎ Child1 PID/Parent Requirement Failed"$'\n'
+          [[ "$output" =~ Child2\ PID:.*Parent\ PID: ]] || errors+="❎ Child2 PID/Parent Requirement Failed"$'\n'
 
-          if ($output -notmatch "Child2 PID:.*Parent PID:") { 
-            $errors += "❎ Child2 PID/Parent Requirement Failed"
-          }
+          if [[ "$input" == "1" && "$output" =~ child\ process\ is\ resumed ]]; then
+            errors+="❎ Child2 Should Have Been Killed"$'\n'
+          fi
 
-          if ($input -eq "1" -and $output -match "child process is resumed") { 
-            $errors += "❎ Child2 Should Have Been Killed"
-          }
+          if [[ "$input" == "0" && ! "$output" =~ child\ process\ is\ resumed ]]; then
+            errors+="❎ Child2 Should Have Been Resumed"$'\n'
+          fi
+        done
 
-          if ($input -eq "0" -and $output -notmatch "child process is resumed") { 
-            $errors += "❎ Child2 Should Have Been Resumed"
-          }
-
-          if (-not $p.HasExited) { 
-            $errors += "❎ Program Did Not Terminate Properly"
-          }
-        }
-
-        if ($errors.Count -gt 0) {
-          $errors | ForEach-Object { Write-Host $_ }
-          Write-Error "❌ FAILURE"
-        }
+        if [[ -n "$errors" ]]; then
+          echo "$errors"
+          exit 1
+        fi
