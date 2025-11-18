@@ -1,0 +1,111 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage{ragged2e, geometry}
+\usepackage{newpxtext,newpxmath}
+\usepackage{indentfirst, setspace, fourier-orns}
+\usepackage{fancyhdr, listings, xcolor, hyperref}
+\usepackage[symbol]{footmisc}
+
+\renewcommand{\thefootnote}{$\dagger$}
+\renewcommand{\thesection}{\Roman{section}} 
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{— {\thepage} —}
+\fancyhead[R]{}
+\fancyhead[L]{}
+\fancyfoot[C]{}
+\renewcommand{\headrulewidth}{0pt}
+
+\lstset{
+    language=C,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    numbersep=5pt,
+    breaklines=true,
+    frame=single
+}
+
+\newcommand{\frontitle}[1]{
+\begin{center}
+    {\Huge #1} \\
+    \vspace{2cm} 
+\end{center}
+}
+
+\newcommand{\fullentry}[2]{
+\thispagestyle{empty}
+{\begin{center}
+\section*{\huge{#1}}
+\\ \vphantom{} \\
+{\huge \\ CSE233 \\ \vphantom{} \\ \Large Sherif M. Haredy (I.D.: 223107334; MAJOR: C.S.) \\ GALALA UNIVERISTY, EGYPT \\ \vphantom{} \\ Prof.\ Amr Hefny \\ \vphantom{} \\ — \\ \vphantom{} \\ \today}
+\end{center}}
+\\ \vphantom{} \\
+}
+
+\begin{document}
+\thispagestyle{empty}
+\frontitle{SUBMISSION\,.}
+\fullentry{‘‘Lab Report \#6.’’}
+
+\section{Implementation}
+
+A struct \texttt{job} handles the process related data:
+
+\begin{itemize}
+    \item PID number
+    \item wait status
+    \item interrupt code
+    \item exit code
+\end{itemize}
+
+The handler routine \texttt{sigchld\_handler} works by checking whether the current process either equals \texttt{child2}'s PID or not:\\
+
+\begin{lstlisting}
+if (proc.p != child2.p)
+\end{lstlisting}
+\\ \vspace{0.1cm}
+If it does not, it updates wait status and interrupt code; if it does, then it calls \texttt{\_exit(0)}, which terminates the parent if an interrupt signal is made.\\
+
+\noindent The signal is sent via \texttt{kill()} according to the process' exit code.\\
+
+The main routine forks two processes, \texttt{child1} and \texttt{child2} (prototyped globally), and runs:\\
+
+\begin{lstlisting}
+while (1) { }
+\end{lstlisting}
+
+\section{SIG Reader}
+
+\emph{This routine is entirely ancillary and was not required per spec sheet.}\\
+
+\texttt{rint.c} implements a small pipe that allows reading each \texttt{job} from each process, which saves the interrupt code; this allows inspection of how each process was interrupted.\\
+
+A subroutine forks a \texttt{\_read} process which calls \texttt{sig\_read()}, feeding the interrupt code for the given child process.
+
+\section{Testing}
+
+The \texttt{script/} folder contains a shell script which runs a series of checks that match the lab's spec sheet. A CI runner works through it in order to verify success.\\
+
+The errors depend on the value of \texttt{process.interrupt} and whether:\\
+
+\begin{lstlisting}
+printf("Child1 PID: %d Parent PID: %d\n\n", getpid(), getppid());
+\end{lstlisting}
+\\ \vspace{0.1cm}
+messages are successful and correct, in order and format.
+
+\section*{References}
+
+\begin{itemize}
+    \item Source Code: \url{https://github.com/sherif6931/oslab6}
+    \item Lab Spec: c.f.\ \texttt{README.md} in the repository
+\end{itemize}
+
+\noindent\emph{This \text{\LaTeX} doc’s text is a copy of the {\tt dev} to {\tt main} successful PR.}
+\end{document}
