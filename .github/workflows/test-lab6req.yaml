@@ -17,8 +17,7 @@ jobs:
 
     - name: Build ELF
       run: |
-        mkdir -p bin
-        gcc -DSIGFLAG src/main.c -o bin/out
+        make
 
     - name: Check output
       shell: bash
