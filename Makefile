@@ -3,7 +3,7 @@
 CC := gcc
 CFLAGS := -Wall -Wextra -Iincl -DSIGFLAG
 
-BIN := bin/out.exe
+BIN := bin/out
 
 SRCS := src/main.c src/rint.c
 OBJS := $(SRCS:.c=.o)
