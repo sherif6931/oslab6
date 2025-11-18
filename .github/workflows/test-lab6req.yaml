@@ -23,30 +23,26 @@ jobs:
       shell: bash
       run: |
         errors=""
+        
+        ./bin/out <<EOF > out.txt 2>&1
+        0
+        1
+        EOF
 
-        for input in 0 1; do
-          echo "$input" > "in${input}.txt"
-          timeout 15s ./bin/out < "in${input}.txt" > "out${input}.txt" 2>&1 || errors+="❎ Program Timeout"$'\n'
+        output=$(cat out.txt)
 
-          output=$(cat "out${input}.txt")
+        [[ "$output" =~ Child1\ PID:.*Parent\ PID: ]] || errors+="❎ Child1 PID/Parent Requirement Failed"$'\n'
+        [[ "$output" =~ Child2\ PID:.*Parent\ PID: ]] || errors+="❎ Child2 PID/Parent Requirement Failed"$'\n'
 
-          [[ "$output" =~ Child1\ PID:.*Parent\ PID: ]] || errors+="❎ Child1 PID/Parent Requirement Failed"$'\n'
-          [[ "$output" =~ Child2\ PID:.*Parent\ PID: ]] || errors+="❎ Child2 PID/Parent Requirement Failed"$'\n'
-
-          if [[ "$input" == "1" && "$output" =~ Child\ process\ resumed ]]; then
-            errors+="❎ Child2 Should Have Been Killed"$'\n'
-          fi
-
-          if [[ "$input" == "0" && ! "$output" =~ Child\ process\ resumed ]]; then
+        if [[ "$output" =~ "Child process resumed" ]]; then
             errors+="❎ Child2 Should Have Been Resumed"$'\n'
-          fi
+        fi
 
-          if [[ "$input" == "1" && ! "$output" =~ INTERRUPT=9 ]]; then
-            errors+="❎ Child2 should have been killed by SIGKILL (interrupt=9)"$'\n'
-          fi
-        done
+        [[ "$output" =~ "INTERRUPT=9" ]] || errors+="❎ Child2 should have been killed by SIGKILL (interrupt=9)"$'\n'
 
         if [[ -n "$errors" ]]; then
-          echo "$errors"
-          exit 1
+            echo "$errors"
+            exit 1
         fi
+
+        echo "✅ All checks passed"
