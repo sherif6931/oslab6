@@ -4,50 +4,23 @@ name: Test Requirements
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, dev ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev ]
 
 jobs:
-  run-binary:
-    runs-on: windows-latest
-
+  run-linux:
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Check output
-      shell: pwsh
+    - name: Build ELF
       run: |
-        foreach ($input in @( "1", "0" )) {
-          $in = "in$input.txt"
-          $out = "out$input.txt"
-          Set-Content $in $input
-          $p = Start-Process -FilePath ".\bin\out.exe" -RedirectStandardInput $in -RedirectStandardOutput $out -NoNewWindow -PassThru
+        make
 
-          if (-not $p.WaitForExit(15000)) { 
-            Write-Error "❎ Program timeout" 
-          }
-
-          $output = Get-Content $out -Raw
-
-          if ($output -notmatch "Child1 PID:.*Parent PID:") { 
-            Write-Error "❎ Child1 PID/Parent Requirement Failed" 
-          }
-
-          if ($output -notmatch "Child2 PID:.*Parent PID:") { 
-            Write-Error "❎ Child2 PID/Parent Requirement Failed" 
-          }
-
-          if ($input -eq "1" -and $output -match "child process is resumed") { 
-            Write-Error "❎ Child2 Should Have Been Killed" 
-          }
-
-          if ($input -eq "0" -and $output -notmatch "child process is resumed") { 
-            Write-Error "❎ Child2 Should Have Been Resumed" 
-          }
-
-          if (-not $p.HasExited) { 
-            Write-Error "❎ Program Did Not Terminate Properly" 
-          }
-        }
+    - name: Check output
+      shell: bash
+      run: |
+        chmod +x ./script/script.sh
+        ./script/script.sh
